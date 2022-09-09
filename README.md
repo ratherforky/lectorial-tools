@@ -1,0 +1,2 @@
+- Connect to DB: `make psql`
+  - `\q` to quit
