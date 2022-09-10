@@ -17,5 +17,6 @@ data RoomsController
     | EditRoomAction { roomId :: !(Id Room) }
     | UpdateRoomAction { roomId :: !(Id Room) }
     | DeleteRoomAction { roomId :: !(Id Room) }
-    | AddStudentToRoomAction
+    | AddStudentToRoomAction { roomId :: !(Id Room) }
+    | SelectRandomStudentAction { roomId :: !(Id Room) }
     deriving (Eq, Show, Data)
