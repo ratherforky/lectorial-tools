@@ -10,19 +10,16 @@ import qualified IHP.Log as Log
 import Web.Util.Random
 import Control.Lens (_18')
 import Control.Monad (void)
+import qualified Data.List.NonEmpty as NE
 
 instance Controller RoomsController where
     action SelectRandomStudentAction { roomId } = do
       students :: [Student] <- queryWillingStudents roomId |> fetch
-      -- let filteredStudents
-      --       =  students
-      --       |> filter (\student -> student)
-      -- TODO: Ensure fairness
-      maybeRandomStudent <- randomChooseMaybeIO students
-      case maybeRandomStudent of
-        Nothing -> Log.debug ("Tried to select a random student, but none to select from" :: String)
-        Just randomStudent
-          -> newRecord @RoomsStudentsSelected
+      case students of
+        [] -> Log.debug ("No willing students to select from" :: String) -- TODO: Add more info to message with interpolation
+        (x:xs) -> do
+          randomStudent <- randomChooseIO (x NE.:| xs)
+          newRecord @RoomsStudentsSelected
               |> set #roomId roomId
               |> set #studentId randomStudent.id
               |> createRecord
