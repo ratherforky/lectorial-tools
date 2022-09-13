@@ -18,7 +18,15 @@ instance Controller RoomsController where
       case students of
         [] -> Log.debug ("No willing students to select from" :: String) -- TODO: Add more info to message with interpolation
         (x:xs) -> do
-          randomStudent <- randomChooseIO (x NE.:| xs)
+          selectedStudents <- getSelectedStudents roomId
+          let remainingStudents = students \\ selectedStudents
+          randomStudent <- case remainingStudents of
+            [] -> do
+              -- resetRoomSelections roomId -- Remove all selections from DB and start again
+              _ <- sqlExec "DELETE FROM rooms_students_selected WHERE room_id = ?" (Only roomId)
+              randomChooseIO (x NE.:| xs)
+            (a:as) -> randomChooseIO (a NE.:| as)
+          
           newRecord @RoomsStudentsSelected
               |> set #roomId roomId
               |> set #studentId randomStudent.id
@@ -26,6 +34,15 @@ instance Controller RoomsController where
               |> void -- Don't need to use record immediately after creation
        
       redirectTo ShowRoomAction{roomId}
+      where
+        resetSelections roomId
+          = error "TODO"
+      --   selectStudent roomId student
+      --     = newRecord @RoomsStudentsSelected
+      --         |> set #roomId roomId
+      --         |> set #studentId randomStudent.id
+      --         |> createRecord
+      --         |> void
 
     action AddStudentToRoomAction { roomId } = do
       Log.debug ("AddStudentToRoomAction fired with roomId =" <> show roomId)
@@ -117,7 +134,8 @@ getSelectedStudents roomId
     |> fetch
     |> fmap (sortOn (labelValue .> Down) .> map contentValue) -- Sort newest first
 
-
+resetRoomSelections roomId
+  = sqlExec "DELETE FROM rooms_students_selected WHERE room_id = ?" roomId
 
 -- getSelectedStudentsSQL :: Query
 getSelectedStudentsSQL
