@@ -13,7 +13,7 @@ CREATE TABLE rooms_students (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
     room_id UUID NOT NULL,
     student_id UUID NOT NULL,
-    in_answer_pool BOOLEAN DEFAULT false NOT NULL
+    in_answer_pool BOOLEAN NOT NULL
 );
 CREATE INDEX rooms_students_room_id_index ON rooms_students (room_id);
 CREATE INDEX rooms_students_student_id_index ON rooms_students (student_id);

@@ -8,18 +8,25 @@ import Web.View.Rooms.Show
 import qualified IHP.Log as Log
 
 import Web.Util.Random
+import Control.Lens (_18')
+import Control.Monad (void)
 
 instance Controller RoomsController where
     action SelectRandomStudentAction { roomId } = do
-      students <- getStudentsInRoom roomId
-      -- TODO: Filter students who don't want to be selected
+      students :: [Student] <- queryWillingStudents roomId |> fetch
+      -- let filteredStudents
+      --       =  students
+      --       |> filter (\student -> student)
       -- TODO: Ensure fairness
-      Just randomStudent <- randomChooseMaybeIO students
-      roomStudentSelected
-        <- newRecord @RoomsStudentsSelected
-           |> set #roomId roomId
-           |> set #studentId randomStudent.id
-           |> createRecord
+      maybeRandomStudent <- randomChooseMaybeIO students
+      case maybeRandomStudent of
+        Nothing -> Log.debug ("Tried to select a random student, but none to select from" :: String)
+        Just randomStudent
+          -> newRecord @RoomsStudentsSelected
+              |> set #roomId roomId
+              |> set #studentId randomStudent.id
+              |> createRecord
+              |> void -- Don't need to use record immediately after creation
        
       redirectTo ShowRoomAction{roomId}
 
@@ -32,6 +39,7 @@ instance Controller RoomsController where
       roomsStudent <- newRecord @RoomsStudent
                       |> set #roomId roomId
                       |> set #studentId student.id
+                      |> set #inAnswerPool True -- Those who add their name are included by default
                       |> createRecord
 
       redirectTo (ShowRoomAction{roomId}) -- Maybe studentId should be passed in too 
@@ -98,6 +106,10 @@ getStudentsInRoom roomId
   = queryStudentsInRoom roomId
     |> fetch
 
+queryWillingStudents roomId
+  = queryStudentsInRoom roomId
+    |> filterWhereJoinedTable @RoomsStudent (#inAnswerPool, True)
+
 getSelectedStudents roomId
   = query @Student
     |> innerJoin @RoomsStudentsSelected (#id, #studentId)
@@ -107,6 +119,8 @@ getSelectedStudents roomId
     -- |> orderBy #createdAt
     |> fetch
     |> fmap (sortOn (labelValue .> Down) .> map contentValue) -- Sort newest first
+
+
 
 -- getSelectedStudentsSQL :: Query
 getSelectedStudentsSQL
