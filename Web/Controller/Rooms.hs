@@ -7,14 +7,14 @@ import Web.View.Rooms.Edit
 import Web.View.Rooms.Show
 import qualified IHP.Log as Log
 
+import Web.Util.Random
+
 instance Controller RoomsController where
     action SelectRandomStudentAction { roomId } = do
       students <- getStudentsInRoom roomId
-      -- TODO: Make this actually random
       -- TODO: Filter students who don't want to be selected
       -- TODO: Ensure fairness
-      Just randomStudent 
-            <- head students |> pure
+      Just randomStudent <- randomChooseMaybeIO students
       roomStudentSelected
         <- newRecord @RoomsStudentsSelected
            |> set #roomId roomId
@@ -106,7 +106,7 @@ getSelectedStudents roomId
     |> labelResults @RoomsStudentsSelected #createdAt
     -- |> orderBy #createdAt
     |> fetch
-    |> fmap (sortOn (labelValue .> Down) .> map contentValue)
+    |> fmap (sortOn (labelValue .> Down) .> map contentValue) -- Sort newest first
 
 -- getSelectedStudentsSQL :: Query
 getSelectedStudentsSQL

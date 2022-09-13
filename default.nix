@@ -9,6 +9,7 @@ let
             cabal-install
             base
             wai
+            random
             text
             hlint
             p.ihp
