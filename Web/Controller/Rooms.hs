@@ -13,36 +13,56 @@ import Control.Monad (void)
 import qualified Data.List.NonEmpty as NE
 
 instance Controller RoomsController where
+    action JoinRoomAction = do
+      let friendlyIdParam = param @Text "friendlyId"
+      maybeRoom <- query @Room |> findMaybeBy #friendlyId friendlyIdParam
+
+      case maybeRoom of
+        Just room -> do
+          setSuccessMessage "Joined existing room"
+          redirectTo ShowRoomAction{ roomId = room.id }
+        Nothing   -> do
+          let room = newRecord @Room
+          room
+            |> buildRoom
+            |> ifValid \case
+                Left room -> do
+                  setErrorMessage "Error creating new room"
+                  randomNewRoomId <- genUniqueRandomRoomId
+                  render IndexView { .. } 
+                Right room -> do
+                    room <- room |> createRecord
+                    setSuccessMessage "Room created"
+                    redirectTo ShowRoomAction{roomId = room.id}
+
+      -- redirectTo RoomsAction
+
     action SelectRandomStudentAction { roomId } = do
       students :: [Student] <- queryWillingStudents roomId |> fetch
       case students of
-        [] -> Log.debug ("No willing students to select from" :: String) -- TODO: Add more info to message with interpolation
+        [] -> do
+          setErrorMessage "No students to select from"
+          -- Log.debug ("No willing students to select from" :: String) -- TODO: Add more info to message with interpolation
         (x:xs) -> do
           selectedStudents <- getSelectedStudents roomId
           let remainingStudents = students \\ selectedStudents
-          randomStudent <- case remainingStudents of
-            [] -> do
-              -- resetRoomSelections roomId -- Remove all selections from DB and start again
-              _ <- sqlExec "DELETE FROM rooms_students_selected WHERE room_id = ?" (Only roomId)
-              randomChooseIO (x NE.:| xs)
-            (a:as) -> randomChooseIO (a NE.:| as)
+          randomStudent
+            <- case remainingStudents of
+                [] -> do
+                  deleteRoomSelections roomId -- Remove all selections from DB and start again
+                  randomChooseIO (x NE.:| xs)
+                (a:as) -> randomChooseIO (a NE.:| as)
           
-          newRecord @RoomsStudentsSelected
-              |> set #roomId roomId
-              |> set #studentId randomStudent.id
-              |> createRecord
-              |> void -- Don't need to use record immediately after creation
-       
+          createSelectionRecord roomId randomStudent.id
+
       redirectTo ShowRoomAction{roomId}
       where
-        resetSelections roomId
-          = error "TODO"
-      --   selectStudent roomId student
-      --     = newRecord @RoomsStudentsSelected
-      --         |> set #roomId roomId
-      --         |> set #studentId randomStudent.id
-      --         |> createRecord
-      --         |> void
+        createSelectionRecord roomId studentId
+          = newRecord @RoomsStudentsSelected
+              |> set #roomId roomId
+              |> set #studentId studentId
+              |> createRecord
+              |> void -- Don't need to use record immediately after creation
 
     action AddStudentToRoomAction { roomId } = do
       Log.debug ("AddStudentToRoomAction fired with roomId =" <> show roomId)
@@ -59,7 +79,7 @@ instance Controller RoomsController where
       redirectTo (ShowRoomAction{roomId}) -- Maybe studentId should be passed in too 
 
     action RoomsAction = do
-        rooms <- query @Room |> fetch
+        randomNewRoomId <- genUniqueRandomRoomId
         render IndexView { .. }
 
     action NewRoomAction = do
@@ -103,6 +123,8 @@ instance Controller RoomsController where
 
     action DeleteRoomAction { roomId } = do
         room <- fetch roomId
+        deleteRoomSelections roomId
+        deleteRoomStudents roomId
         deleteRecord room
         setSuccessMessage "Room deleted"
         redirectTo RoomsAction
@@ -134,8 +156,20 @@ getSelectedStudents roomId
     |> fetch
     |> fmap (sortOn (labelValue .> Down) .> map contentValue) -- Sort newest first
 
-resetRoomSelections roomId
-  = sqlExec "DELETE FROM rooms_students_selected WHERE room_id = ?" roomId
+-- resetRoomSelections roomId
+--   = sqlExec "DELETE FROM rooms_students_selected WHERE room_id = ?" roomId
+
+deleteRoomSelections :: (?modelContext::ModelContext) => Id Room -> IO ()
+deleteRoomSelections roomId
+  = sqlExec "DELETE FROM rooms_students_selected \
+            \WHERE room_id = ?" (Only roomId)
+    |> void
+
+deleteRoomStudents :: (?modelContext::ModelContext) => Id Room -> IO ()
+deleteRoomStudents roomId
+  = sqlExec "DELETE FROM rooms_students \
+            \WHERE room_id = ?" (Only roomId)
+    |> void
 
 -- getSelectedStudentsSQL :: Query
 getSelectedStudentsSQL
@@ -147,4 +181,4 @@ getSelectedStudentsSQL
     \ORDER BY rss.created_at DESC \
     \LIMIT 1;"
 
--- SELECT * FROM students AS s INNER JOIN rooms_students_selected AS rss ON s.id = rss.student_id INNER JOIN rooms AS r ON rss.room_id = r.id
+genUniqueRandomRoomId = pure "RandomID" -- TODO: Make this random and ensure it doesn't already exist in DB

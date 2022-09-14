@@ -6,16 +6,16 @@ data ShowView = ShowView { room :: Room, studentNames :: [Text], randomStudent :
 instance View ShowView where
     html ShowView { .. } = [hsx|
         {breadcrumb}
-        <h1>Show Room</h1>
-        <p>Room ID: {room.friendlyId}</p>
 
-        <form id="main-form" method="POST" action={(AddStudentToRoomAction room.id)}>
-            <input type="text" name="username"/>
-            <input type="submit" class="btn btn-primary"/>
+        <h1>Room ID: {room.friendlyId}</h1>
+
+        <form id="" method="POST" action={(AddStudentToRoomAction room.id)}>
+            <input type="text" name="username" placeholder="Name"/>
+            <input type="submit" class="btn btn-primary" value="Join Room"/>
         </form>
 
-        <form id="main-form" method="POST" action={(SelectRandomStudentAction room.id)}>
-            <input type="submit" class="btn btn-primary"/>
+        <form id="" method="POST" action={(SelectRandomStudentAction room.id)}>
+            <input type="submit" class="btn btn-primary" value="Random Pick"/>
         </form>
 
         <p>Random Student: {randomStudent} </p>
