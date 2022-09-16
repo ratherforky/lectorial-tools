@@ -11,7 +11,7 @@ data StaticController = WelcomeAction deriving (Eq, Show, Data)
 
 data RoomsController
     = RoomsAction
-    | ShowRoomAction { maybeRoomId :: !(Maybe (Id Room)), maybeFriendlyId :: !(Maybe Text) }
+    | ShowRoomAction { roomId :: !(Id Room) }
     | AddStudentToRoomAction { roomId :: !(Id Room) }
     | SelectRandomStudentAction { roomId :: !(Id Room) }
     | JoinRoomAction

@@ -35,12 +35,10 @@ instance Controller RoomsController where
       let friendlyIdParam = param @Text "friendlyId"
       maybeRoom <- findRoomFriendlyId friendlyIdParam
 
-      redirectTo ShowRoomAction{ maybeRoomId = Nothing, maybeFriendlyId = Just friendlyIdParam }
-
       case maybeRoom of
         Just room -> do
           setSuccessMessage "Joined existing room"
-          redirectTo ShowRoomAction{ maybeRoomId = Just room.id, maybeFriendlyId = Nothing }
+          redirectTo ShowRoomAction{ roomId = room.id }
         Nothing   -> do
           newRecord @Room
             |> buildRoom
@@ -53,7 +51,7 @@ instance Controller RoomsController where
                     room <- room |> createRecord
                     setSessionTyped sk.createdRoomID room.id -- If this user created the room, store that info in the session
                     setSuccessMessage "Room created"
-                    redirectTo ShowRoomAction{ maybeRoomId = Just room.id, maybeFriendlyId = Nothing }
+                    redirectTo ShowRoomAction{ roomId = room.id }
 
     action SelectRandomStudentAction { roomId } = do
       students :: [Student] <- queryWillingStudents roomId |> fetch
@@ -73,7 +71,7 @@ instance Controller RoomsController where
           
           createSelectionRecord roomId randomStudent.id
 
-      redirectTo ShowRoomAction{maybeRoomId = Just roomId, maybeFriendlyId = Nothing}
+      redirectTo ShowRoomAction{ roomId }
       where
         createSelectionRecord roomId studentId
           = newRecord @RoomsStudentsSelected
@@ -102,49 +100,27 @@ instance Controller RoomsController where
               -- related to themselves, eg. their willingness to answer questions
               setSessionTyped sk.studentID student.id
 
-      redirectTo (ShowRoomAction{maybeRoomId = Just roomId, maybeFriendlyId = Nothing}) 
+      redirectTo ShowRoomAction{ roomId }
 
     action RoomsAction = do
         randomNewRoomId <- genUniqueRandomRoomId
         render IndexView { .. }
 
-    action ShowRoomAction { maybeRoomId, maybeFriendlyId } = autoRefresh do
-      -- Logic handling room joining/creation using friendlyId (maybe a bit dodgy since this is used as a GET request...)
-      maybeRoom <- case maybeFriendlyId of
-        Just friendlyId -> do
-          maybeRoom' <- findRoomFriendlyId friendlyId
-          case maybeRoom' of
-            Just room -> do
-              setSuccessMessage "Joined existing room"
-              pure $ Just room
-            Nothing   -> do
-              room <- newRecord @Room
-                |> set #friendlyId friendlyId
-                |> createRecord 
-              
-              setSessionTyped sk.createdRoomID room.id -- If this user created the room, store that info in the session
-              setSuccessMessage "Room created"
-              pure $ Just room
+    action ShowRoomAction { roomId } = autoRefresh do
+      room <- fetch roomId
 
-        Nothing -> fetchOneOrNothing maybeRoomId
+      willingStudents <- queryWillingStudents room.id |> fetch
+      let studentPool = map (get #username) willingStudents -- Wish this could more easily be done in the query builder
 
-      case maybeRoom of
-        Nothing -> do
-          setErrorMessage "Error: Couldn't show room"
-          redirectTo RoomsAction
-        Just room -> do
-          willingStudents <- queryWillingStudents room.id |> fetch
-          let studentPool = map (get #username) willingStudents -- Wish this could more easily be done in the query builder
+      selectedStudents <- getSelectedStudents room.id
+      let randomStudent = maybe "" (\student -> student.username) (head selectedStudents)
 
-          selectedStudents <- getSelectedStudents room.id
-          let randomStudent = maybe "" (\student -> student.username) (head selectedStudents)
+      clientIsCreator <- checkIfClientIsCreator room.id
+      Log.debug $ "Client is room creator: " <> show clientIsCreator
 
-          clientIsCreator <- checkIfClientIsCreator room.id
-          Log.debug $ "Client is room creator: " <> show clientIsCreator
+      maybeStudent <- getMaybeStudent room.id
 
-          maybeStudent <- getMaybeStudent room.id
-
-          render ShowView { .. }
+      render ShowView { .. }
       where
         checkIfClientIsCreator roomId
           = maybe False (\createdRoomID -> createdRoomID == roomId)
@@ -253,7 +229,7 @@ answerPoolAction roomId errorMessage answerPoolCommand = do
       |> updateRecord
       |> void
   
-  redirectTo ShowRoomAction{maybeRoomId = Just roomId, maybeFriendlyId = Nothing}
+  redirectTo ShowRoomAction{ roomId }
   where
     actionToBool = \case
       LeavePool -> False
