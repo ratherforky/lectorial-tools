@@ -20,4 +20,6 @@ data RoomsController
     | AddStudentToRoomAction { roomId :: !(Id Room) }
     | SelectRandomStudentAction { roomId :: !(Id Room) }
     | JoinRoomAction
+    | LeaveAnswerPoolAction { roomId :: !(Id Room) }
+    | JoinAnswerPoolAction { roomId :: !(Id Room) }
     deriving (Eq, Show, Data)

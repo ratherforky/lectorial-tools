@@ -8,11 +8,31 @@ import Web.View.Rooms.Show
 import qualified IHP.Log as Log
 
 import Web.Util.Random
+import Web.Util.TypedSession
 import Control.Lens (_18')
 import Control.Monad (void)
 import qualified Data.List.NonEmpty as NE
+import Control.Monad.Trans.Maybe
+
+
+data SessionKeys = SessionKeys
+  { createdRoomID :: !(ByteString, Proxy (Id Room))
+  , studentID :: !(ByteString, Proxy (Id Student))
+  }
+
+sk :: SessionKeys
+sk = SessionKeys
+  { createdRoomID = ("createdRoomID", Proxy)
+  , studentID = ("studentID", Proxy)
+  }
+
+data AnswerPoolCommand = JoinPool | LeavePool deriving (Show, Eq)
 
 instance Controller RoomsController where
+    action JoinAnswerPoolAction{ roomId } = answerPoolAction roomId "Joining answer pool failed" JoinPool
+
+    action LeaveAnswerPoolAction{ roomId } = answerPoolAction roomId "Leaving answer pool failed" LeavePool
+
     action JoinRoomAction = do
       let friendlyIdParam = param @Text "friendlyId"
       maybeRoom <- query @Room |> findMaybeBy #friendlyId friendlyIdParam
@@ -32,6 +52,7 @@ instance Controller RoomsController where
                   render IndexView { .. } 
                 Right room -> do
                     room <- room |> createRecord
+                    setSessionTyped sk.createdRoomID room.id -- If this user created the room, store that info in the session
                     setSuccessMessage "Room created"
                     redirectTo ShowRoomAction{roomId = room.id}
 
@@ -76,6 +97,10 @@ instance Controller RoomsController where
                       |> set #inAnswerPool True -- Those who add their name are included by default
                       |> createRecord
 
+      -- Save student ID in session so they can edit things
+      -- related to themselves, eg. their willingness to answer questions
+      setSessionTyped sk.studentID student.id
+
       redirectTo (ShowRoomAction{roomId}) -- Maybe studentId should be passed in too 
 
     action RoomsAction = do
@@ -87,13 +112,41 @@ instance Controller RoomsController where
         render NewView { .. }
 
     action ShowRoomAction { roomId } = autoRefresh do
-        room <- fetch roomId
-        students <- getStudentsInRoom roomId
-        let studentNames = map (get #username) students -- Wish this could more easily be done in the query builder
-        selectedStudents <- getSelectedStudents roomId
-        let randomStudent = maybe "" (\student -> student.username) (head selectedStudents)
-        Log.debug (show studentNames)
-        render ShowView { .. }
+      room <- fetch roomId
+      willingStudents <- queryWillingStudents roomId |> fetch
+      let studentPool = map (get #username) willingStudents -- Wish this could more easily be done in the query builder
+
+      selectedStudents <- getSelectedStudents roomId
+      let randomStudent = maybe "" (\student -> student.username) (head selectedStudents)
+
+      clientIsCreator <- checkIfClientIsCreator room.id
+      Log.debug $ "Client is room creator: " <> show clientIsCreator
+
+      maybeStudent <- getMaybeStudent room.id
+
+      render ShowView { .. }
+      where
+        checkIfClientIsCreator roomId
+          = maybe False (\createdRoomID -> createdRoomID == roomId)
+            <$> getSessionTyped sk.createdRoomID
+
+        getMaybeStudent roomId = runMaybeT do
+          studentID <- MaybeT $ getSessionTyped sk.studentID
+          student <- MaybeT $ fetchOneOrNothing studentID
+          roomsStudent
+            <- MaybeT
+                $ query @RoomsStudent
+                  |> filterWhere (#roomId, roomId)
+                  |> filterWhere (#studentId, studentID)
+                  |> fetchOneOrNothing
+          
+          pure $ StudentRoomData
+                  { username = student.username
+                  , inAnswerPool = roomsStudent.inAnswerPool
+                  }
+          -- case maybeStudentID of
+          --   Nothing -> pure Nothing
+          --   Just studentID -> tudentRecord <- fetch stude
 
     action EditRoomAction { roomId } = do
         room <- fetch roomId
@@ -182,3 +235,35 @@ getSelectedStudentsSQL
     \LIMIT 1;"
 
 genUniqueRandomRoomId = pure "RandomID" -- TODO: Make this random and ensure it doesn't already exist in DB
+
+getRoomsStudent roomId studentID
+  = query @RoomsStudent
+    |> filterWhere (#roomId, roomId)
+    |> filterWhere (#studentId, studentID)
+    |> fetchOneOrNothing
+
+getSessionStudent :: (?context::ControllerContext, ?modelContext::ModelContext)
+                  => IO (Maybe Student)
+getSessionStudent = runMaybeT do
+  studentID <- MaybeT $ getSessionTyped sk.studentID
+  MaybeT $ fetchOneOrNothing studentID
+
+answerPoolAction roomId errorMessage answerPoolCommand = do
+  maybeRoomsStudent <- runMaybeT do
+    studentID <- MaybeT $ getSessionTyped sk.studentID
+    MaybeT $ getRoomsStudent roomId studentID
+
+  case maybeRoomsStudent of
+    Nothing -> do
+      setErrorMessage errorMessage
+    Just roomsStudent -> do
+      roomsStudent
+      |> set #inAnswerPool (actionToBool answerPoolCommand)
+      |> updateRecord
+      |> void
+  
+  redirectTo ShowRoomAction{roomId}
+  where
+    actionToBool = \case
+      LeavePool -> False
+      JoinPool  -> True
