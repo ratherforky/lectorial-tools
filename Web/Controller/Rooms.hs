@@ -86,8 +86,8 @@ instance Controller RoomsController where
         |> fill @'["username"]
         |> ifValid \case
             Left _ -> setErrorMessage "Failed to add student to room"
-            Right student -> do
-              student |> createRecord
+            Right studentPreCreation -> do
+              student <- studentPreCreation |> createRecord
 
               newRecord @RoomsStudent
                 |> set #roomId roomId
