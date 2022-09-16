@@ -10,7 +10,7 @@ instance View IndexView where
         <h1>Join Room</h1>
 
         <form id="" method="POST" action={JoinRoomAction} data-disable-javascript-submission="true">
-            <input type="text" name="friendlyId" value={randomNewRoomId}/>
+            <input type="text" name="friendlyId" placeholder="Enter a room code"/>
             <input type="submit" class="btn btn-primary" value="Join"/>
         </form>
 
