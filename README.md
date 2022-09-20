@@ -1,4 +1,4 @@
-# Lectorial Tools Webapp
+# Lectorial Tools Web App
 
 Deployed at https://lectorial.ihpapp.com/
 
