@@ -12,5 +12,10 @@ Deployed at https://lectorial.ihpapp.com/
 
 ## Other useful notes
 
+- The `Web` directory is where most of the core logic goes
+- Uses an MVC pattern
+  - Model: Postgres database
+  - View: `Web.View`
+  - Controller: `Web.Controller`
 - Connect to DB: `make psql`
   - `\q` to quit
