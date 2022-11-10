@@ -18,6 +18,7 @@ instance View ShowView where
     html ShowView { .. } = [hsx|
         {breadcrumb}
 
+        <h2>lectorial.ihpapp.com</h2>
         <h1>Room ID: {room.friendlyId}</h1>
         {renderModeratorStatus clientIsCreator}
 
