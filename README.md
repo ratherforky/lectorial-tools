@@ -15,6 +15,13 @@ Deployed at https://lectorial.ihpapp.com/
   - Delete the newly created `foo` directory afterwards
 1. In the root directory of the project, run `devenv up`
 
+## VSCode setup
+
+- For HLS:
+  - Install `Haskell` extension
+    - Manage HLS via PATH
+  - Install `direnv` extension (this will ensure the HLS bundled with IHP works correctly)
+
 ## Other useful notes
 
 - The `Web` directory is where most of the core logic goes

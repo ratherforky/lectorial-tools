@@ -82,23 +82,50 @@ instance Controller RoomsController where
 
     action AddStudentToRoomAction { roomId } = do
       Log.debug ("AddStudentToRoomAction fired with roomId =" <> show roomId)
-      newRecord @Student
-        |> fill @'["username"]
-        |> ifValid \case
-            Left _ -> setErrorMessage "Failed to add student to room"
-            Right studentPreCreation -> do
-              student <- studentPreCreation |> createRecord
 
-              newRecord @RoomsStudent
-                |> set #roomId roomId
-                |> set #studentId student.id
-                |> set #inAnswerPool True -- Those who add their name are included by default
-                |> createRecord
-                |> void
+      maybeStudent <- runMaybeT $ do
+        sID <- MaybeT $ getSessionTyped sk.studentID
+        MaybeT $ getRoomsStudent roomId sID
+        MaybeT $ query @Student
+                   |> filterWhere (#id, sID)
+                   |> fetchOneOrNothing
 
-              -- Save student ID in session so they can edit things
-              -- related to themselves, eg. their willingness to answer questions
-              setSessionTyped sk.studentID student.id
+      case maybeStudent of
+        -- If student already set a name in this room
+        Just student -> do
+          student
+            |> fill @'["username"]
+            -- TODO: Validate here?
+            |> updateRecord
+            |> void
+          -- let unameMaybe = paramOrNothing "username"
+          -- case unameMaybe of
+          --   Nothing -> setErrorMessage "No username param"
+          --   Just uname -> 
+          --     undefined
+                -- |> set #
+
+          -- roomsStudent
+
+        -- If no student ID already
+        Nothing -> do
+          newRecord @Student
+            |> fill @'["username"]
+            |> ifValid \case
+                Left _ -> setErrorMessage "Failed to add student to room"
+                Right studentPreCreation -> do
+                  student <- studentPreCreation |> createRecord
+
+                  newRecord @RoomsStudent
+                    |> set #roomId roomId
+                    |> set #studentId student.id
+                    |> set #inAnswerPool True -- Those who add their name are included by default
+                    |> createRecord
+                    |> void
+
+                  -- Save student ID in session so they can edit things
+                  -- related to themselves, eg. their willingness to answer questions
+                  setSessionTyped sk.studentID student.id
 
       redirectTo ShowRoomAction{ roomId }
 
@@ -110,7 +137,7 @@ instance Controller RoomsController where
       room <- fetch roomId
 
       willingStudents <- queryWillingStudents room.id |> fetch
-      let studentPool = map (get #username) willingStudents -- Wish this could more easily be done in the query builder
+      let studentPool = map (\s -> (s |> get #username, s |> get #id)) willingStudents -- Wish this could more easily be done in the query builder
 
       selectedStudents <- getSelectedStudents room.id
       let randomStudent = maybe "" (\student -> student.username) (head selectedStudents)
@@ -141,6 +168,18 @@ instance Controller RoomsController where
                   , inAnswerPool = roomsStudent.inAnswerPool
                   }
 
+    action DeleteStudentAction { roomId, studentId } = do
+      deleteRoomStudent roomId studentId
+      -- setSuccessMessage "Post deleted"
+      respondHtml [hsx|
+        <!-- <!DOCTYPE html>
+        <html>
+          <body> -->
+            <a href={ShowRoomAction roomId}>Click to go back</a>
+          <!-- </body>
+        </html> -->
+      |]
+      -- redirectToPath "/" -- ShowRoomAction{ roomId }
     -- action DeleteRoomAction { roomId } = do
     --     room <- fetch roomId
     --     deleteRoomSelections roomId
@@ -189,6 +228,12 @@ deleteRoomStudents :: (?modelContext::ModelContext) => Id Room -> IO ()
 deleteRoomStudents roomId
   = sqlExec "DELETE FROM rooms_students \
             \WHERE room_id = ?" (Only roomId)
+    |> void
+
+deleteRoomStudent :: (?modelContext::ModelContext) => Id Room -> Id Student -> IO ()
+deleteRoomStudent roomId studentId
+  = sqlExec "DELETE FROM rooms_students \
+            \WHERE room_id = ? AND student_id = ?" (roomId, studentId)
     |> void
 
 -- getSelectedStudentsSQL :: Query
