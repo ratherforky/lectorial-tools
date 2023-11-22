@@ -1,5 +1,4 @@
 .DS_Store
-.envrc
 .idea
 tmp
 result
@@ -24,3 +23,10 @@ Config/client_session_key.aes
 
 # Ignore locally checked out IHP version
 IHP
+
+# direnv
+.devenv*
+devenv.local.nix
+.direnv
+.env
+
