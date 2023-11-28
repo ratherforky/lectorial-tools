@@ -6,6 +6,9 @@ Deployed at https://lectorial.ihpapp.com/
 
 - `nix`
 - `direnv` (with shell hook)
+- VSCode extensions:
+  - Haskell/HLS
+  - direnv
 
 ## Compiling and running the app
 
