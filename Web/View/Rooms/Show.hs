@@ -1,9 +1,11 @@
 module Web.View.Rooms.Show where
 import Web.View.Prelude
+import Debug.Trace (traceShow, trace)
+import Data.Text (unpack)
 
 data ShowView = ShowView
   { room :: Room
-  , studentPool :: [Text]
+  , studentPool :: [(Text, Id Student)]
   , randomStudent :: Text
   , clientIsCreator :: Bool
   , maybeStudent :: Maybe StudentRoomData
@@ -27,16 +29,18 @@ instance View ShowView where
             <input type="submit" class="btn btn-primary" value="Join Room"/>
         </form>
 
-        {renderRandomPickButton clientIsCreator room.id}
+        <h4>Random Student: <strong>{randomStudent}</strong> </h4>
 
-        <p>Random Student: {randomStudent} </p>
+        {renderRandomPickButton clientIsCreator room.id}
 
         {renderStudentSessionData room.id maybeStudent}
 
         <h2>Student pool</h2>
-        <ul>
-          {forEach studentPool renderUserName}
+
+        <ul class="list-group">
+          {forEach studentPool (renderStudent clientIsCreator room.id)}
         </ul>
+ 
 
     |]
         where
@@ -51,14 +55,26 @@ instance View ShowView where
 --     {submitButton}
 -- |]
 
-renderUserName :: Text -> Html
-renderUserName username = [hsx|<li>{username}</li>|]
+renderStudent :: Bool -> Id Room -> (Text, Id Student) -> Html
+renderStudent isCreator rId (username, sId)
+  | isCreator = [hsx|
+      <div class="list-group-item d-flex align-items-center justify-content-between">{username} {deleteButton}</div>
+    |]
+  | otherwise = [hsx|<li>{username}</li>|]
+  where
+    -- deleteButton = buttonWithCSS "DELETE" "btn btn-light btn-sm float-sm-right" (DeleteStudentAction rId sId) "x"
+    deleteButton  = [hsx|
+      <form method="DELETE" action={DeleteStudentAction rId sId} target="_blank">
+        <input type="submit" class="btn btn-light btn-sm float-sm-right" value="x"/>
+      </form>
+    |]
 
 renderStudentSessionData :: Id Room -> Maybe StudentRoomData -> Html
 renderStudentSessionData roomId = \case
   Nothing -> [hsx||]
   Just student -> [hsx|
-    <p>Your name: {student.username}</p>
+    <h3>Your info</h3>
+    <p>Name: {student.username}</p>
     {renderPoolToggle student.inAnswerPool}
   |]
   where
@@ -68,11 +84,26 @@ renderStudentSessionData roomId = \case
       | otherwise    = simpleButton (JoinAnswerPoolAction roomId) "Join Answer Pool"
 
 simpleButton :: RoomsController -> Text -> Html
-simpleButton actionPOST buttonText = [hsx|
-  <form method="POST" action={actionPOST}>
-    <input type="submit" class="btn btn-primary" value={buttonText}/>
+simpleButton = buttonWithCSS "POST" "btn btn-primary"
+
+buttonWithCSS :: Text -> Text -> RoomsController -> Text -> Html
+buttonWithCSS method css action buttonText = [hsx|
+  <form method={method} action={action} >
+    <input type="submit" class={css} value={buttonText}/>
   </form>
 |]
+
+jsButton action = trace (unpack $ show html) html
+  where
+    html = [hsx|
+      <script data-act={action}>
+        const foo = () => {
+          var acty = document.currentScript.dataset.act;
+          console.log(acty);
+        }
+      </script>
+      <button onclick="foo();">Click me</button>
+    |]
 
 renderModeratorStatus :: Bool -> Html
 renderModeratorStatus isCreator

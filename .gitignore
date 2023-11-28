@@ -17,6 +17,9 @@ gen
 del
 static/prod.*
 Config/client_session_key.aes
+.vscode
+.vscode/*
+
 
 # Ignore locally checked out IHP version
 IHP

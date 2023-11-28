@@ -17,5 +17,6 @@ data RoomsController
     | JoinRoomAction
     | LeaveAnswerPoolAction { roomId :: !(Id Room) }
     | JoinAnswerPoolAction { roomId :: !(Id Room) }
+    | DeleteStudentAction { roomId :: !(Id Room), studentId :: !(Id Student) }
     -- | DeleteRoomAction { roomId :: !(Id Room) }
     deriving (Eq, Show, Data)
