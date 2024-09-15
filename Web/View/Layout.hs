@@ -18,7 +18,7 @@ defaultLayout inner = H.docTypeHtml ! A.lang "en" $ [hsx|
     {stylesheets}
     {scripts}
 
-    <title>{pageTitleOrDefault "App"}</title>
+    <title>{pageTitleOrDefault "Lectorial Tools"}</title>
 </head>
 <body>
     <div class="container mt-4">
@@ -61,13 +61,14 @@ devScripts = [hsx|
         <script id="livereload-script" src={assetPath "/livereload.js"} data-ws={liveReloadWebsocketUrl}></script>
     |]
 
+-- TODO: Add favicon
 metaTags :: Html
 metaTags = [hsx|
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
-    <meta property="og:title" content="App"/>
+    <meta property="og:title" content="Lectorial Tools"/>
     <meta property="og:type" content="website"/>
-    <meta property="og:url" content="TODO"/>
-    <meta property="og:description" content="TODO"/>
+    <meta property="og:url" content="lectorial.uk"/>
+    <meta property="og:description" content="Tools for lectorials, written in Haskell."/>
     {autoRefreshMeta}
 |]

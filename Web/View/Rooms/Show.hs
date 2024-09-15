@@ -1,7 +1,6 @@
 module Web.View.Rooms.Show where
+
 import Web.View.Prelude
-import Debug.Trace (traceShow, trace)
-import Data.Text (unpack)
 
 data ShowView = ShowView
   { room :: Room
@@ -20,8 +19,10 @@ instance View ShowView where
     html ShowView { .. } = [hsx|
         {breadcrumb}
 
-        <h2>tinyurl.com/lectorial</h2>
+        <h2>lectorial.uk</h2>
+
         <h1>Room ID: {room.friendlyId}</h1>
+
         {renderModeratorStatus clientIsCreator}
 
         <form id="" method="POST" action={(AddStudentToRoomAction room.id)}>
@@ -93,18 +94,6 @@ buttonWithCSS method css action buttonText = [hsx|
     <input type="submit" class={css} value={buttonText}/>
   </form>
 |]
-
-jsButton action = trace (unpack $ show html) html
-  where
-    html = [hsx|
-      <script data-act={action}>
-        const foo = () => {
-          var acty = document.currentScript.dataset.act;
-          console.log(acty);
-        }
-      </script>
-      <button onclick="foo();">Click me</button>
-    |]
 
 renderModeratorStatus :: Bool -> Html
 renderModeratorStatus isCreator
