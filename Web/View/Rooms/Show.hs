@@ -29,19 +29,10 @@ instance View ShowView where
             <input type="submit" class="btn btn-primary" value="Join Room"/>
         </form>
 
-        <h4>Random Student: <strong>{randomStudent}</strong> </h4>
-
-        {renderRandomPickButton clientIsCreator room.id}
-
         {renderStudentSessionData room.id maybeStudent}
 
-        <h2>Student pool</h2>
-
-        <ul class="list-group">
-          {forEach studentPool (renderStudent clientIsCreator room.id)}
-        </ul>
+        {guardRender clientIsCreator $ renderModeratorView randomStudent studentPool room.id }
  
-
     |]
         where
             breadcrumb = renderBreadcrumb
@@ -49,18 +40,28 @@ instance View ShowView where
                             , breadcrumbText "Show Room"
                             ]
 
+renderModeratorView randomStudent studentPool roomid = [hsx|
+  <h4>Random Student: <strong>{randomStudent}</strong></h4>
+
+  {simpleButton (SelectRandomStudentAction roomid) "Random Pick"}
+
+  <h2>Student pool</h2>
+
+  <ul class="list-group">
+    {forEach studentPool (renderStudent roomid)}
+  </ul>
+|]
+
 -- renderStudentForm :: Room -> Student -> Html
 -- renderStudentForm room student = formFor student [hsx|
 --     {(textField #friendlyId)}
 --     {submitButton}
 -- |]
 
-renderStudent :: Bool -> Id Room -> (Text, Id Student) -> Html
-renderStudent isCreator rId (username, sId)
-  | isCreator = [hsx|
-      <div class="list-group-item d-flex align-items-center justify-content-between">{username} {deleteButton}</div>
-    |]
-  | otherwise = [hsx|<li>{username}</li>|]
+renderStudent :: Id Room -> (Text, Id Student) -> Html
+renderStudent rId (username, sId) = [hsx|
+    <div class="list-group-item d-flex align-items-center justify-content-between">{username} {deleteButton}</div>
+  |]
   where
     -- deleteButton = buttonWithCSS "DELETE" "btn btn-light btn-sm float-sm-right" (DeleteStudentAction rId sId) "x"
     deleteButton  = [hsx|
@@ -112,6 +113,6 @@ renderModeratorStatus isCreator
   |]
   | otherwise = [hsx||]
 
-renderRandomPickButton isCreator roomId
-  | isCreator = simpleButton (SelectRandomStudentAction roomId) "Random Pick"
-  | otherwise = ""
+
+guardRender :: Bool -> Html -> Html
+guardRender p html = if p then html else [hsx||]
