@@ -102,23 +102,23 @@ resource "aws_security_group" "ec2_sg" {
   }
 }
 
-data "aws_ami" "nixos_x86_64" {
-  owners      = ["427812963091"]
-  most_recent = true
+# data "aws_ami" "nixos_x86_64" {
+#   owners      = ["427812963091"]
+#   most_recent = true
 
-  filter {
-    name   = "name"
-    values = ["nixos/23.05*"]
-  }
-  filter {
-    name   = "architecture"
-    values = ["x86_64"]
-  }
-}
+#   filter {
+#     name   = "name"
+#     values = ["nixos/23.05*"]
+#   }
+#   filter {
+#     name   = "architecture"
+#     values = ["x86_64"]
+#   }
+# }
 
 resource "aws_instance" "ihp_app" {
   availability_zone = var.az_1
-  ami = data.aws_ami.nixos_x86_64.id # "ami-075111b79058282b7" # nixos/23.11
+  ami = "ami-0b4137a60b23b5a84" # data.aws_ami.nixos_x86_64.id # "ami-075111b79058282b7" # nixos/23.11
   instance_type = "t3.medium"
   key_name = "${var.key_name}"
   subnet_id = aws_subnet.public.id

@@ -37,5 +37,4 @@ override.tf.json
 terraform.rc
 
 # Extra ignores I'm not sure about but seem like they shouldn't be pushed
-.terraform.lock.hcl
 db_info.txt
