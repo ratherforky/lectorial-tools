@@ -108,7 +108,7 @@ data "aws_ami" "nixos_x86_64" {
 
   filter {
     name   = "name"
-    values = ["nixos/24.05*"]
+    values = ["nixos/23.05*"]
   }
   filter {
     name   = "architecture"

@@ -55,10 +55,10 @@
                   "${nixpkgs}/nixos/modules/virtualisation/amazon-image.nix"
                   ihp.nixosModules.appWithPostgres
                   ({ ... }: {
-                      security.acme.defaults.email = "me@example.com";
+                      security.acme.defaults.email = "jess.foster@bristol.ac.uk";
 
                       services.ihp = {
-                          # domain = "myihpapp.com";
+                          domain = "lectorial.uk";
                           migrations = ./Application/Migration;
                           schema = ./Application/Schema.sql;
                           fixtures = ./Application/Fixtures.sql;
@@ -72,7 +72,7 @@
                       # This should reflect the nixos version from the NixOS AMI initally installed
                       # After the initial install, it should not be changed. Otherwise e.g. the postgres
                       # server might need a manual data migration if NixOS changes the default postgres version
-                      system.stateVersion = "24.05";
+                      system.stateVersion = "23.05";
                   })
               ];
           };
