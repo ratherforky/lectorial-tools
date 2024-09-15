@@ -57,6 +57,38 @@
                   ({ ... }: {
                       security.acme.defaults.email = "jess.foster@bristol.ac.uk";
 
+                      networking.firewall = {
+                          enable = true;
+                          allowedTCPPorts = [ 22 80 443 ];
+                      };
+
+                      # Accept the terms of service of the Let's encrypt provider.
+                      security.acme.acceptTerms = true;
+
+                      # security.acme.defaults.server = "https://acme-staging-v02.api.letsencrypt.org/directory";
+                      # security.acme.preliminarySelfsigned = true;
+
+                      # /var/lib/acme/.challenges must be writable by the ACME user
+                      # and readable by the Nginx user. The easiest way to achieve
+                      # this is to add the Nginx user to the ACME group.
+                      # users.users.nginx.extraGroups = [ "acme" ];
+
+                      services.nginx = {
+                        # enable = true;
+                        virtualHosts."lectorial.uk" =  {
+                          forceSSL = true;
+                          enableACME = true;
+                          # acmeRoot = null;
+                          serverAliases = [ "www.lectorial.uk" ];
+                          locations."/" = {
+                            root = "/var/www";
+                          };
+                            # Uncomment to have http auth with username `foo` and password `bar`.
+                            # basicAuth = { foo = "bar"; };
+                        };
+                      };
+
+
                       services.ihp = {
                           domain = "lectorial.uk";
                           migrations = ./Application/Migration;
@@ -65,9 +97,18 @@
                           sessionSecret = "xxx";
                       };
 
+                      # troubleshooting failed worker service
+                      # from Joachim Breitner post on the IHP slack: https://ihpframework.slack.com/archives/C01DQE0F4F8/p1719935767784549
+                      systemd.services.worker.enable = nixpkgs.lib.mkForce false;
+
                       # Add swap to avoid running out of memory during builds
                       # Useful if your server have less than 4GB memory
                       swapDevices = [ { device = "/swapfile"; size = 8192; } ];
+
+                      # # As we use a pre-built AMI on AWS,
+                      # # it is essential to enable automatic updates.
+                      # # @see https://nixos.wiki/wiki/Automatic_system_upgrades
+                      # system.autoUpgrade.enable = true;
 
                       # This should reflect the nixos version from the NixOS AMI initally installed
                       # After the initial install, it should not be changed. Otherwise e.g. the postgres
