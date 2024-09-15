@@ -48,7 +48,7 @@
             #     ./nixos/configuration.nix
             #   ];
             # };
-            flake.nixosConfigurations."ihp-app" = nixpkgs.lib.nixosSystem {
+            flake.nixosConfigurations."lectorial" = nixpkgs.lib.nixosSystem {
               system = "x86_64-linux";
               specialArgs = inputs;
               modules = [
