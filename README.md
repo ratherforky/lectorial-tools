@@ -1,6 +1,6 @@
 # Lectorial Tools Web App
 
-Deployed at https://lectorial.ihpapp.com/
+Deployed at https://lectorial.uk/
 
 ## Dependencies
 
@@ -34,3 +34,16 @@ Deployed at https://lectorial.ihpapp.com/
   - Controller: `Web.Controller`
 - Connect to DB: `make psql`
   - `\q` to quit
+
+## Deploying
+
+With SSH config:
+
+```ssh
+Host lectorial
+    HostName INSERT-URL.compute.amazonaws.com
+    User root
+        IdentityFile ~/.ssh/SSH-KEY.pem
+```
+
+- In project root: `deploy-to-nixos lectorial`
