@@ -31,5 +31,4 @@ devenv.local.nix
 .env
 
 # exclude secrets
-secrets
-sectets/*
+old-secrets

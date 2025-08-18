@@ -7,9 +7,10 @@
         flake-parts.follows = "ihp/flake-parts";
         devenv.follows = "ihp/devenv";
         systems.follows = "ihp/systems";
+        agenix.url = "github:ryantm/agenix";
     };
 
-    outputs = inputs@{ ihp, flake-parts, systems, nixpkgs, self, ... }:
+    outputs = inputs@{ ihp, flake-parts, systems, nixpkgs, self, agenix, ... }:
         flake-parts.lib.mkFlake { inherit inputs; } {
 
             systems = import systems;
@@ -115,6 +116,10 @@
                       # server might need a manual data migration if NixOS changes the default postgres version
                       system.stateVersion = "23.05";
                   })
+                  agenix.nixosModules.default
+                  {
+                    age.secrets.admin-password.file = ./secrets/admin-password.age;
+                  }
               ];
           };
 
