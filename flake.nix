@@ -117,9 +117,9 @@
                       # server might need a manual data migration if NixOS changes the default postgres version
                       system.stateVersion = "23.05";
                   })
-                  {
-                    services.userborn.enable = false;
-                  }
+                  # {
+                  #   services.userborn.enable = false;
+                  # }
                   agenix.nixosModules.default
                   {
                     age.secrets.admin-password.file = ./secrets/admin-password.age;
