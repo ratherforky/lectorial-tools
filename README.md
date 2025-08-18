@@ -47,3 +47,7 @@ Host lectorial
 ```
 
 - In project root: `deploy-to-nixos lectorial`
+
+### Restarting AWS instance
+
+- Stopping an instance and restarting it will lead to a new 'Public DNS' ==> In Cloudflare configuration Update DNS->Records->Edit main CNAME 'Content' with new 'Public DNS' from AWS instance details
