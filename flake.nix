@@ -7,7 +7,7 @@
         flake-parts.follows = "ihp/flake-parts";
         devenv.follows = "ihp/devenv";
         systems.follows = "ihp/systems";
-        agenix.url = "github:ryantm/agenix";
+        agenix.url = "github:ryantm/agenix/caab0435e181becfd66c24e5ea5ae56ac837afbe";
         agenix.inputs.nixpkgs.follows = "ihp/nixpkgs";
     };
 
