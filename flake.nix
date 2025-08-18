@@ -8,6 +8,7 @@
         devenv.follows = "ihp/devenv";
         systems.follows = "ihp/systems";
         agenix.url = "github:ryantm/agenix";
+        agenix.inputs.nixpkgs.follows = "ihp/nixpkgs";
     };
 
     outputs = inputs@{ ihp, flake-parts, systems, nixpkgs, self, agenix, ... }:
