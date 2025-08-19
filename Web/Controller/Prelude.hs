@@ -25,4 +25,5 @@ adminAuth = do
   -- The encrypted password in secrets/admin-password.age is
   -- decrypted at runtime and put in "/run/agenix/admin-password"
   pass <- readFileUtf8 "/run/agenix/admin-password"
-  basicAuth "admin" pass ""
+  basicAuth "admin" "password" ""
+  -- basicAuth "admin" pass ""
