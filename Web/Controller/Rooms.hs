@@ -34,6 +34,14 @@ instance Controller RoomsController where
       entries <- getAllRoomsStudents
       render AllRoomsStudentsView { .. }
 
+    action DeleteAllRoomsStudentsAction = do
+      adminAuth
+      deleteAll @RoomsStudentsSelected
+      deleteAll @RoomsStudent
+      deleteAll @Student
+      deleteAll @Room
+      redirectTo AllRoomsStudentsAction
+
     action JoinAnswerPoolAction{ roomId } = answerPoolAction roomId "Joining answer pool failed" JoinPool
 
     action LeaveAnswerPoolAction{ roomId } = answerPoolAction roomId "Leaving answer pool failed" LeavePool

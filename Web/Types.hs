@@ -20,4 +20,5 @@ data RoomsController
     | DeleteStudentAction { roomId :: !(Id Room), studentId :: !(Id Student) }
     -- | DeleteRoomAction { roomId :: !(Id Room) }
     | AllRoomsStudentsAction
+    | DeleteAllRoomsStudentsAction
     deriving (Eq, Show, Data)

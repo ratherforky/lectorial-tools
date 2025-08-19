@@ -7,6 +7,12 @@ instance View AllRoomsStudentsView where
     html AllRoomsStudentsView { .. } = [hsx|
         {breadcrumb}
         <h1>AllRoomsStudentsView</h1>
+
+        <form method="POST" action={DeleteAllRoomsStudentsAction}>
+            <input type="hidden" name="_method" value="DELETE"/>
+            <button type="submit">Delete All</button>
+        </form>
+
         <table>
           <tr>
             <th>Room name</th>
