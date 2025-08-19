@@ -15,6 +15,7 @@ import Generated.Types
 import Web.Routes
 import Control.Category (Category)
 import IHP.RouterPrelude (readFileUtf8)
+import qualified IHP.Log as Log
 
 (.>) :: Category cat => cat a b -> cat b c -> cat a c
 (.>) = flip (.)
@@ -25,5 +26,6 @@ adminAuth = do
   -- The encrypted password in secrets/admin-password.age is
   -- decrypted at runtime and put in "/run/agenix/admin-password"
   pass <- readFileUtf8 "/run/agenix/admin-password"
+  Log.debug ("Password: " <> pass)
   -- basicAuth "admin" "password" ""
   basicAuth "admin" pass ""
