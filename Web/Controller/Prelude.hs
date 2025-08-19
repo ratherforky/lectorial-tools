@@ -23,6 +23,6 @@ adminAuth :: (?context::ControllerContext) => IO ()
 adminAuth = do
   -- The password secret is managed by agenix.
   -- The encrypted password in secrets/admin-password.age is
-  -- decrypted at runtime and put in "/run/agenix.d/admin-password"
-  pass <- readFileUtf8 "/run/agenix.d/admin-password"
+  -- decrypted at runtime and put in "/run/agenix/admin-password"
+  pass <- readFileUtf8 "/run/agenix/admin-password"
   basicAuth "admin" pass ""
