@@ -4,6 +4,7 @@ module Web.Controller.Prelude
 , module IHP.ControllerPrelude
 , module Generated.Types
 , (.>)
+, adminAuth
 )
 where
 
@@ -13,6 +14,15 @@ import IHP.ControllerPrelude
 import Generated.Types
 import Web.Routes
 import Control.Category (Category)
+import IHP.RouterPrelude (readFileUtf8)
 
 (.>) :: Category cat => cat a b -> cat b c -> cat a c
 (.>) = flip (.)
+
+adminAuth :: (?context::ControllerContext) => IO ()
+adminAuth = do
+  -- The password secret is managed by agenix.
+  -- The encrypted password in secrets/admin-password.age is
+  -- decrypted at runtime and put in "/run/agenix.d/1/admin-password"
+  pass <- readFileUtf8 "/run/agenix.d/1/admin-password"
+  basicAuth "admin" pass ""

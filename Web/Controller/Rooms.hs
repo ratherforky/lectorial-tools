@@ -11,6 +11,8 @@ import Control.Lens (_18')
 import Control.Monad (void)
 import qualified Data.List.NonEmpty as NE
 import Control.Monad.Trans.Maybe
+import Web.View.Rooms.AllRooms
+import Web.View.Rooms.AllRoomsStudents
 
 
 data SessionKeys = SessionKeys
@@ -27,6 +29,11 @@ sk = SessionKeys
 data AnswerPoolCommand = JoinPool | LeavePool deriving (Show, Eq)
 
 instance Controller RoomsController where
+    action AllRoomsStudentsAction = do
+      adminAuth
+      entries <- getAllRoomsStudents
+      render AllRoomsStudentsView { .. }
+
     action JoinAnswerPoolAction{ roomId } = answerPoolAction roomId "Joining answer pool failed" JoinPool
 
     action LeaveAnswerPoolAction{ roomId } = answerPoolAction roomId "Leaving answer pool failed" LeavePool
@@ -281,3 +288,12 @@ answerPoolAction roomId errorMessage answerPoolCommand = do
       JoinPool  -> True
 
 findRoomFriendlyId friendlyId = query @Room |> findMaybeBy #friendlyId friendlyId
+
+getAllRoomsStudents :: (?modelContext::ModelContext) => IO [(Text, Text)]
+getAllRoomsStudents
+  = sqlQuery
+      "SELECT r.friendly_id, s.username \
+      \FROM rooms_students AS rs \
+      \INNER JOIN rooms AS r ON rs.room_id = r.id \
+      \INNER JOIN students AS s ON rs.student_id = s.id;"
+      ()
